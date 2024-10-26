@@ -6,7 +6,7 @@
 ## Окружение разработки
 
 1. WeMos D1 mini V4.0
-2. [Micropython 1.23 для ESP8266](https://docs.micropython.org/en/v1.23.0/esp8266/quickref.html)
+2. [Micropython 1.24 для ESP8266](https://docs.micropython.org/en/v1.24.0/esp8266/quickref.html)
 3. Python 3.8
 4. [Плагин для Pycharm](https://github.com/JetBrains/intellij-micropython) и все что ему нужно для работы
 

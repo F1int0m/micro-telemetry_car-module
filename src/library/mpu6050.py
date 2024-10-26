@@ -25,10 +25,6 @@ _GYR_SCLR_500DEG = 65.5
 _GYR_SCLR_1000DEG = 32.8
 _GYR_SCLR_2000DEG = 16.4
 
-_ACC_X_ERROR = -0.0351149
-_ACC_Y_ERROR = 1.60878
-_ACC_Z_ERROR = -10.1529
-
 # Pre-defined ranges
 _ACC_RNG_2G = 0x00
 _ACC_RNG_4G = 0x08
@@ -58,30 +54,32 @@ _maxFails = 3
 _MPU6050_ADDRESS = 0x68
 
 
-def signedIntFromBytes(x, endian='big'):
+def signedIntFromBytes(x, endian='big', raw=False):
     y = int.from_bytes(x, endian)
+
+    if raw:
+        return y
+
     if (y >= 0x8000):
         return -((65535 - y) + 1)
     else:
         return y
 
 
-class MPU6050(object):
+class MPU6050:
+    accel_x_error = 0
+    accel_y_error = 0
+    accel_z_error = 0
+
+    accel_x_raw_offset = -1272
+    accel_y_raw_offset = -4544
+    accel_z_raw_offset = 1302
+
     def __init__(self, bus=None, freq=None, sda=None, scl=None, addr=_MPU6050_ADDRESS):
         # Checks any erorr would happen with I2C communication protocol.
         self._failCount = 0
         self._terminatingFailCount = 0
 
-        # Initializing the I2C method for ESP32
-        # Pin assignment:
-        # SCL -> GPIO 22
-        # SDA -> GPIO 21
-        # self.i2c = SoftI2C(scl=Pin(22), sda=Pin(21), freq=100000)
-
-        # Initializing the I2C method for ESP8266
-        # Pin assignment:
-        # SCL -> GPIO 5
-        # SDA -> GPIO 4
         self.i2c = I2C(scl=Pin(5), sda=Pin(4))
 
         self.addr = addr
@@ -96,7 +94,36 @@ class MPU6050(object):
         self._accel_range = self.get_accel_range(True)
         self._gyro_range = self.get_gyro_range(True)
 
-    def _readData(self, register):
+    def auto_calibrate(self):
+
+        measurements_count = 50
+
+        x_acc = 0
+        y_acc = 0
+        z_acc = 0
+
+        print("Start calibration. Don't move")
+
+        for i in range(measurements_count):
+            accel = self.read_accel_data()
+
+            x_acc += accel['x']
+            y_acc += accel['y']
+            z_acc += accel['z']
+
+            sleep_ms(100)
+
+        x_error = x_acc / measurements_count
+        y_error = y_acc / measurements_count
+        z_error = z_acc / measurements_count
+
+        print(f'Finish calibrate {x_error=}; {y_error=}; {z_error=}; ')
+
+        self.accel_x_error = x_error
+        self.accel_y_error = y_error
+        self.accel_z_error = z_error
+
+    def _readData(self, register, raw=False):
         failCount = 0
         while failCount < _maxFails:
             try:
@@ -110,9 +137,9 @@ class MPU6050(object):
                     self._terminatingFailCount = self._terminatingFailCount + 1
                     print(i2c_err_str.format(self.addr))
                     return {'x': float('NaN'), 'y': float('NaN'), 'z': float('NaN')}
-        x = signedIntFromBytes(data[0:2])
-        y = signedIntFromBytes(data[2:4])
-        z = signedIntFromBytes(data[4:6])
+        x = signedIntFromBytes(data[0:2], raw)
+        y = signedIntFromBytes(data[2:4], raw)
+        z = signedIntFromBytes(data[4:6], raw)
         return {'x': x, 'y': y, 'z': z}
 
     # Reads the temperature from the onboard temperature sensor of the MPU-6050.
@@ -179,9 +206,9 @@ class MPU6050(object):
         if g is True:
             return {'x': x, 'y': y, 'z': z}
         elif g is False:
-            x = x * _GRAVITIY_MS2 - _ACC_X_ERROR
-            y = y * _GRAVITIY_MS2 - _ACC_Y_ERROR
-            z = z * _GRAVITIY_MS2 - _ACC_Z_ERROR
+            x = x * _GRAVITIY_MS2 - self.accel_x_error
+            y = y * _GRAVITIY_MS2 - self.accel_y_error
+            z = z * _GRAVITIY_MS2 - self.accel_z_error
             return {'x': x, 'y': y, 'z': z}
 
     def read_accel_abs(self, g=False):
@@ -242,3 +269,11 @@ class MPU6050(object):
         x = atan2(a['y'], a['z'])
         y = atan2(-a['x'], a['z'])
         return {'x': x, 'y': y}
+
+    def read_accel_real(self):
+        acc_data = self.read_accel_data()
+
+        x_angle_rad = atan2(acc_data['y'], acc_data['z'])
+        y_angle_rad = atan2(-acc_data['x'], acc_data['z'])
+
+

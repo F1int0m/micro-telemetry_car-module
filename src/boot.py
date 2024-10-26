@@ -14,7 +14,7 @@ network_client.active(False)
 if config.AP_MODE:
     network_server.active(True)
     print('Start as wifi server')
-    host_ip = network_server.ifconfig()[0]
+    host_ip = network_server.ipconfig('addr4')[0]
     network_server.config(ssid=config.AP_NAME + host_ip,
                           password=config.AP_PASSWORD)
 
@@ -22,7 +22,7 @@ if config.AP_MODE:
 else:
 
     network_client.active(True)
-    print('Start as wifi client')
+    print(f'Start as wifi client. Connect to network {config.NETWORK_NAME}')
 
     network_client.connect(config.NETWORK_NAME, config.NETWORK_PASSWORD)
 
@@ -40,6 +40,6 @@ else:
     else:
         print('time not synced')
 
-    board_config = network_client.ifconfig()
+    board_config = network_client.ipconfig('addr4')
 
     print(f'Connected. {board_config}=')
