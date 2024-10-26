@@ -15,7 +15,8 @@ if config.AP_MODE:
     network_server.active(True)
     print('Start as wifi server')
     host_ip = network_server.ifconfig()[0]
-    network_server.config(ssid=config.AP_NAME + host_ip, password=config.AP_PASSWORD)
+    network_server.config(ssid=config.AP_NAME + host_ip,
+                          password=config.AP_PASSWORD)
 
 
 else:

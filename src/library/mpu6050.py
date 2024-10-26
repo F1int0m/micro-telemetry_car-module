@@ -3,12 +3,13 @@
 # Original repo https://github.com/nickcoutsos/MPU-6050-Python
 # and https://github.com/CoreElectronics/CE-PiicoDev-MPU6050-MicroPython-Module
 
-from math import sqrt, atan2
-from machine import Pin, I2C
+from math import atan2, sqrt
 from time import sleep_ms
 
-error_msg = "\nError \n"
-i2c_err_str = "ESP32 could not communicate with module at address 0x{:02X}, check wiring"
+from machine import I2C, Pin
+
+error_msg = '\nError \n'
+i2c_err_str = 'ESP32 could not communicate with module at address 0x{:02X}, check wiring'
 
 # Global Variables
 _GRAVITIY_MS2 = 9.80665
@@ -57,7 +58,7 @@ _maxFails = 3
 _MPU6050_ADDRESS = 0x68
 
 
-def signedIntFromBytes(x, endian="big"):
+def signedIntFromBytes(x, endian='big'):
     y = int.from_bytes(x, endian)
     if (y >= 0x8000):
         return -((65535 - y) + 1)
@@ -102,27 +103,27 @@ class MPU6050(object):
                 sleep_ms(10)
                 data = self.i2c.readfrom_mem(self.addr, register, 6)
                 break
-            except:
+            except Exception:
                 failCount = failCount + 1
                 self._failCount = self._failCount + 1
                 if failCount >= _maxFails:
                     self._terminatingFailCount = self._terminatingFailCount + 1
                     print(i2c_err_str.format(self.addr))
-                    return {"x": float("NaN"), "y": float("NaN"), "z": float("NaN")}
+                    return {'x': float('NaN'), 'y': float('NaN'), 'z': float('NaN')}
         x = signedIntFromBytes(data[0:2])
         y = signedIntFromBytes(data[2:4])
         z = signedIntFromBytes(data[4:6])
-        return {"x": x, "y": y, "z": z}
+        return {'x': x, 'y': y, 'z': z}
 
     # Reads the temperature from the onboard temperature sensor of the MPU-6050.
     # Returns the temperature [degC].
     def read_temperature(self):
         try:
             rawData = self.i2c.readfrom_mem(self.addr, _TEMP_OUT0, 2)
-            raw_temp = (signedIntFromBytes(rawData, "big"))
-        except:
+            raw_temp = (signedIntFromBytes(rawData, 'big'))
+        except Exception:
             print(i2c_err_str.format(self.addr))
-            return float("NaN")
+            return float('NaN')
         actual_temp = (raw_temp / 340) + 36.53
         return actual_temp
 
@@ -168,24 +169,24 @@ class MPU6050(object):
         elif accel_range == _ACC_RNG_16G:
             scaler = _ACC_SCLR_16G
         else:
-            print("Unkown range - scaler set to _ACC_SCLR_2G")
+            print('Unkown range - scaler set to _ACC_SCLR_2G')
             scaler = _ACC_SCLR_2G
 
-        x = accel_data["x"] / scaler
-        y = accel_data["y"] / scaler
-        z = accel_data["z"] / scaler
+        x = accel_data['x'] / scaler
+        y = accel_data['y'] / scaler
+        z = accel_data['z'] / scaler
 
         if g is True:
-            return {"x": x, "y": y, "z": z}
+            return {'x': x, 'y': y, 'z': z}
         elif g is False:
             x = x * _GRAVITIY_MS2 - _ACC_X_ERROR
             y = y * _GRAVITIY_MS2 - _ACC_Y_ERROR
             z = z * _GRAVITIY_MS2 - _ACC_Z_ERROR
-            return {"x": x, "y": y, "z": z}
+            return {'x': x, 'y': y, 'z': z}
 
     def read_accel_abs(self, g=False):
         d = self.read_accel_data(g)
-        return sqrt(d["x"] ** 2 + d["y"] ** 2 + d["z"] ** 2)
+        return sqrt(d['x'] ** 2 + d['y'] ** 2 + d['z'] ** 2)
 
     def set_gyro_range(self, gyro_range):
         self.i2c.writeto_mem(self.addr, _GYRO_CONFIG, bytes([gyro_range]))
@@ -227,17 +228,17 @@ class MPU6050(object):
         elif gyro_range == _GYR_RNG_2000DEG:
             scaler = _GYR_SCLR_2000DEG
         else:
-            print("Unkown range - scaler set to _GYR_SCLR_250DEG")
+            print('Unkown range - scaler set to _GYR_SCLR_250DEG')
             scaler = _GYR_SCLR_250DEG
 
-        x = gyro_data["x"] / scaler
-        y = gyro_data["y"] / scaler
-        z = gyro_data["z"] / scaler
+        x = gyro_data['x'] / scaler
+        y = gyro_data['y'] / scaler
+        z = gyro_data['z'] / scaler
 
-        return {"x": x, "y": y, "z": z}
+        return {'x': x, 'y': y, 'z': z}
 
     def read_angle(self):  # returns radians. orientation matches silkscreen
         a = self.read_accel_data()
-        x = atan2(a["y"], a["z"])
-        y = atan2(-a["x"], a["z"])
-        return {"x": x, "y": y}
+        x = atan2(a['y'], a['z'])
+        y = atan2(-a['x'], a['z'])
+        return {'x': x, 'y': y}

@@ -3,8 +3,8 @@ import asyncio
 import gc
 from time import time_ns
 
-from library.web_server import MicroPyServer
 from library import mpu6050
+from library.web_server import MicroPyServer
 
 acc_record_limit = 800
 acc_loop_time = 0.1
@@ -22,11 +22,12 @@ async def read_acc_data():
         gc.collect()
         for i in range(acc_record_limit):
             curr_time = time_ns()  # example 184007058000
-            accel = motion.read_accel_data()  # read the accelerometer [ms^-2]. example = 9.97663, 9.97663, 9.97663
+            # read the accelerometer [ms^-2]. example = 9.97663, 9.97663, 9.97663
+            accel = motion.read_accel_data()
 
-            a_x = accel["x"]
-            a_y = accel["y"]
-            a_z = accel["z"]
+            a_x = accel['x']
+            a_y = accel['y']
+            a_z = accel['z']
             async with accel_lock:
                 accel_sensor_data[i] = int((a_x + a_y + a_z) * 10 ** 5)
                 accel_time_data[i] = curr_time
@@ -47,7 +48,8 @@ async def dump(request: str, server: MicroPyServer, stream: asyncio.StreamWriter
         yield ']'
 
     async with accel_lock:
-        server.write_http_response(stream=stream, response_generator=_acc_data_generator, http_code=200)
+        server.write_http_response(
+            stream=stream, response_generator=_acc_data_generator, http_code=200)
 
     return None
 
@@ -63,8 +65,8 @@ async def stats(request: str, server: MicroPyServer, stream: asyncio.StreamWrite
 async def main():
     server = MicroPyServer()
 
-    server.add_route("/dump", dump)
-    server.add_route("/stats", stats)
+    server.add_route('/dump', dump)
+    server.add_route('/stats', stats)
 
     await server.start_server()
 

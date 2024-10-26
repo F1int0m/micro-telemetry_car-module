@@ -15,7 +15,7 @@ HTTP_CODES = {
 
 class MicroPyServer(object):
 
-    def __init__(self, host="0.0.0.0", port=80):
+    def __init__(self, host='0.0.0.0', port=80):
         """ Constructor """
         self._host = host
         self._port = port
@@ -27,14 +27,15 @@ class MicroPyServer(object):
         self._sock = None
         self._loop = asyncio.get_event_loop()
 
-    def make_http_response(self, response: str, http_code=200, content_type="text/html", extend_headers=None):
+    def make_http_response(self, response: str, http_code=200, content_type='text/html', extend_headers=None):
         """ send response """
-        result = str("HTTP/1.1 " + str(http_code) + " " + HTTP_CODES.get(http_code) + "\r\n")
-        result += "Content type:" + content_type + "\r\n"
+        result = str('HTTP/1.1 ' + str(http_code) + ' ' +
+                     HTTP_CODES.get(http_code) + '\r\n')
+        result += 'Content type:' + content_type + '\r\n'
         if extend_headers is not None:
             for header in extend_headers:
-                result += header + "\r\n"
-        result += "\r\n"
+                result += header + '\r\n'
+        result += '\r\n'
         result += response
 
         return result
@@ -44,9 +45,10 @@ class MicroPyServer(object):
             stream: asyncio.StreamWriter,
             response_generator,  # Iterable[str]
             http_code=200,
-            content_type="text/html",
+            content_type='text/html',
     ):
-        stream.write(str("HTTP/1.1 " + str(http_code) + " " + HTTP_CODES.get(http_code) + "\r\n").encode('utf8'))
+        stream.write(str('HTTP/1.1 ' + str(http_code) + ' ' +
+                     HTTP_CODES.get(http_code) + '\r\n').encode('utf8'))
 
         headers = {
             'Content type': content_type,
@@ -56,7 +58,7 @@ class MicroPyServer(object):
             header_line = f'{key}: {value}\r\n'
             stream.write(header_line.encode('utf8'))
 
-        stream.write("\r\n".encode('utf8'))
+        stream.write('\r\n'.encode('utf8'))
 
         for data in response_generator():
             stream.write(data.encode('utf8'))
@@ -69,7 +71,7 @@ class MicroPyServer(object):
         """
 
         ip, port = reader.get_extra_info('peername')
-        print(f"Got a new connection from {ip}")
+        print(f'Got a new connection from {ip}')
 
         gc.collect()
 
@@ -90,7 +92,8 @@ class MicroPyServer(object):
             status = 500
 
         if response:
-            http_response = self.make_http_response(response=response, http_code=status)
+            http_response = self.make_http_response(
+                response=response, http_code=status)
             print(f'{http_response=}')
 
             writer.write(http_response.encode('utf8'))
@@ -102,33 +105,33 @@ class MicroPyServer(object):
 
         gc.collect()
 
-        print(f"Connection to client {ip} were closed.")
+        print(f'Connection to client {ip} were closed.')
 
     async def start_server(self):
         print(f'start server {self._host}:{self._port}')
 
-        server = await asyncio.start_server(self.handler, self._host, self._port)
+        await asyncio.start_server(self.handler, self._host, self._port)
 
         print('server started')
 
-    def add_route(self, path, handler, method="GET"):
+    def add_route(self, path, handler, method='GET'):
         """ Add new route  """
         self._routes.append(
-            {"path": path, "handler": handler, "method": method}
+            {'path': path, 'handler': handler, 'method': method}
         )
 
     def find_route(self, request):
         """ Find route """
-        lines = request.split("\r\n")
-        method = re.search("^([A-Z]+)", lines[0]).group(1)
-        path = re.search("^[A-Z]+\\s+(/[-a-zA-Z0-9_.]*)", lines[0]).group(1)
+        lines = request.split('\r\n')
+        method = re.search('^([A-Z]+)', lines[0]).group(1)
+        path = re.search('^[A-Z]+\\s+(/[-a-zA-Z0-9_.]*)', lines[0]).group(1)
         for route in self._routes:
-            if method != route["method"]:
+            if method != route['method']:
                 continue
-            if path == route["path"]:
+            if path == route['path']:
                 return route
             else:
-                match = re.search("^" + route["path"] + "$", path)
+                match = re.search('^' + route['path'] + '$', path)
                 if match:
-                    print(method, path, route["path"])
+                    print(method, path, route['path'])
                     return route

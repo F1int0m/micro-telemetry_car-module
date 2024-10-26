@@ -1,6 +1,6 @@
-from library.mpu6050 import MPU6050, _ACC_Z_ERROR
-
 from time import sleep_ms
+
+from library.mpu6050 import MPU6050
 
 mpu = MPU6050()
 
@@ -13,10 +13,10 @@ iterate = 0
 while True:
     iterate += 1
     accel = mpu.read_accel_data()
-    aX = accel["x"]
-    aY = accel["y"]
-    aZ = accel["z"]
-    print("x: " + str(aX) + " y: " + str(aY) + " z: " + str(aZ))
+    aX = accel['x']
+    aY = accel['y']
+    aZ = accel['z']
+    print('x: ' + str(aX) + ' y: ' + str(aY) + ' z: ' + str(aZ))
 
     x_acc += aX
     y_acc += aY
